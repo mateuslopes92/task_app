@@ -1,8 +1,15 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableWithoutFeedback} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  TouchableOpacity,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import moment from 'moment';
 import 'moment/locale/pt-br';
+import Swipable from 'react-native-gesture-handler/Swipeable';
 
 import commonStyles from '../commonStyles';
 
@@ -42,22 +49,32 @@ export default function Task({
     return moment(date).locale('pt-br').format('ddd, D [de] MMMM');
   };
 
+  const rightActions = () => {
+    return (
+      <TouchableOpacity style={styles.buttonDelete}>
+        <Icon name="trash" size={30} color="#fff" />
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <TouchableWithoutFeedback onPress={() => toggleTask(id)}>
-        <View style={styles.checkContainer}>{getCheckView(doneAt)}</View>
-      </TouchableWithoutFeedback>
-      <View>
-        <Text
-          style={{
-            ...styles.descritpion,
-            textDecorationLine: doneOrNotStyle.textDecorationLine,
-          }}>
-          {description}
-        </Text>
-        <Text style={styles.date}>{getDate()}</Text>
+    <Swipable renderRightActions={rightActions}>
+      <View style={styles.container}>
+        <TouchableWithoutFeedback onPress={() => toggleTask(id)}>
+          <View style={styles.checkContainer}>{getCheckView(doneAt)}</View>
+        </TouchableWithoutFeedback>
+        <View>
+          <Text
+            style={{
+              ...styles.descritpion,
+              textDecorationLine: doneOrNotStyle.textDecorationLine,
+            }}>
+            {description}
+          </Text>
+          <Text style={styles.date}>{getDate()}</Text>
+        </View>
       </View>
-    </View>
+    </Swipable>
   );
 }
 
@@ -92,12 +109,18 @@ const styles = StyleSheet.create({
   descritpion: {
     fontFamily: commonStyles.fontFamily,
     color: commonStyles.colors.mainText,
-    fontWeight: 'bold',
     fontSize: 15,
   },
   date: {
     fontFamily: commonStyles.fontFamily,
     color: commonStyles.colors.subText,
     fontSize: 12,
+  },
+  buttonDelete: {
+    backgroundColor: commonStyles.colors.today,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
   },
 });

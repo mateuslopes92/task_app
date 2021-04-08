@@ -54,8 +54,6 @@ export default function TaskList() {
       setShowDoneTasks(true);
       filterTasks();
       setIsModalVisible(false);
-
-      console.log(newTasks);
     }
   };
 
@@ -65,7 +63,6 @@ export default function TaskList() {
 
     if (taskToUpdate) {
       taskToUpdate.doneAt = taskToUpdate?.doneAt === '' ? new Date() : '';
-      console.log(taskToUpdate);
       tasks.splice(taskToUpdateIndex, 1);
       const newTasks = [taskToUpdate, ...tasks];
       setTasks(newTasks);
@@ -191,6 +188,3 @@ const styles = StyleSheet.create({
     right: 24,
   },
 });
-function alert(arg0: string, arg1: string) {
-  throw new Error('Function not implemented.');
-}
