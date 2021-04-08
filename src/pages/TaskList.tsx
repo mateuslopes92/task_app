@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import todayImg from '../../assets/imgs/today.jpg';
 
@@ -28,7 +29,7 @@ interface TaskProps {
 
 export default function TaskList() {
   const today = moment().locale('pt-br').format('ddd, D [de] MMMM');
-  const [showDoneTasks, setShowDoneTasks] = useState(false);
+  const [showDoneTasks, setShowDoneTasks] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tasks, setTasks] = useState<TaskProps[]>([]);
   const [visibleTasks, setVisibleTasks] = useState<TaskProps[]>([]);
@@ -51,12 +52,18 @@ export default function TaskList() {
       ];
 
       setTasks(newTasks);
-      setShowDoneTasks(true);
-      filterTasks();
+      setVisibleTasks(newTasks);
       setIsModalVisible(false);
-
-      console.log(newTasks);
+      setShowDoneTasks(false);
+      filterTasks();
     }
+  };
+
+  const onDelete = (id: number) => {
+    const newTasks = tasks.filter(i => i.id !== id);
+
+    setTasks(newTasks);
+    setVisibleTasks(newTasks);
   };
 
   const toggleTask = (taskId: number) => {
@@ -65,7 +72,6 @@ export default function TaskList() {
 
     if (taskToUpdate) {
       taskToUpdate.doneAt = taskToUpdate?.doneAt === '' ? new Date() : '';
-      console.log(taskToUpdate);
       tasks.splice(taskToUpdateIndex, 1);
       const newTasks = [taskToUpdate, ...tasks];
       setTasks(newTasks);
@@ -78,17 +84,30 @@ export default function TaskList() {
   };
 
   const filterTasks = () => {
-    if (showDoneTasks) {
+    if (!showDoneTasks) {
       const pending = tasks.filter(t => t.doneAt === '');
       setVisibleTasks(pending);
+      AsyncStorage.setItem('@tasks', JSON.stringify(pending));
     } else {
       setVisibleTasks(tasks);
+      AsyncStorage.setItem('@tasks', JSON.stringify(tasks));
     }
   };
 
   useEffect(() => {
+    const getTasksAsync = async () => {
+      const newTasksString = await AsyncStorage.getItem('@tasks');
+      const newTasks = JSON.parse(newTasksString);
+      setTasks(newTasks);
+      setVisibleTasks(newTasks);
+      filterTasks();
+    };
+
+    getTasksAsync();
+  }, []);
+
+  useEffect(() => {
     filterTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDoneTasks]);
 
   return (
@@ -102,6 +121,7 @@ export default function TaskList() {
         isVisible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onSave={onSave}
+        onDelete={onDelete}
       />
       <ImageBackground source={todayImg} style={styles.background}>
         <View style={styles.iconBar}>
@@ -131,6 +151,7 @@ export default function TaskList() {
                 estimateAt={item.estimateAt}
                 doneAt={item.doneAt}
                 toggleTask={toggleTask}
+                onDelete={onDelete}
               />
             );
           }}
@@ -191,6 +212,3 @@ const styles = StyleSheet.create({
     right: 24,
   },
 });
-function alert(arg0: string, arg1: string) {
-  throw new Error('Function not implemented.');
-}
