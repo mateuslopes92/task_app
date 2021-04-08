@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState} from 'react';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 import {
@@ -10,16 +10,14 @@ import {
   FlatList,
   TouchableOpacity,
   Platform,
-  KeyboardAvoidingView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import BottomSheet from 'reanimated-bottom-sheet';
 
 import todayImg from '../../assets/imgs/today.jpg';
 
 import Task from '../components/Task';
+import AddTask from '../components/AddTask';
 import commonStyles from '../commonStyles';
-import {TextInput} from 'react-native-gesture-handler';
 
 interface TaskProps {
   id: number;
@@ -31,24 +29,35 @@ interface TaskProps {
 export default function TaskList() {
   const today = moment().locale('pt-br').format('ddd, D [de] MMMM');
   const [showDoneTasks, setShowDoneTasks] = useState(false);
-  const [bottomSheetVisible, setBottomSheetVisible] = useState(0);
-  const [newTask, setNewTask] = useState('');
-  const [tasks, setTasks] = useState<TaskProps[]>([
-    {
-      id: Math.random(),
-      description: 'Ligar amor <3',
-      estimateAt: moment().toDate(),
-      doneAt: moment().toDate(),
-    },
-    {
-      id: Math.random(),
-      description: 'Lsfafa',
-      estimateAt: moment().toDate(),
-      doneAt: '',
-    },
-  ]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [tasks, setTasks] = useState<TaskProps[]>([]);
   const [visibleTasks, setVisibleTasks] = useState<TaskProps[]>([]);
-  const sheetRef = useRef(null);
+
+  const onSave = (newTask: string, date: Date) => {
+    if (!newTask || !newTask.trim()) {
+      // eslint-disable-next-line no-alert
+      alert('Dados invalidos', 'Informe a descricao!');
+
+      return;
+    } else {
+      const newTasks = [
+        ...tasks,
+        {
+          id: Math.random(),
+          description: newTask,
+          estimateAt: date,
+          doneAt: '',
+        },
+      ];
+
+      setTasks(newTasks);
+      setShowDoneTasks(true);
+      filterTasks();
+      setIsModalVisible(false);
+
+      console.log(newTasks);
+    }
+  };
 
   const toggleTask = (taskId: number) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
@@ -79,55 +88,21 @@ export default function TaskList() {
 
   useEffect(() => {
     filterTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDoneTasks]);
-
-  useEffect(() => {
-    setBottomSheetVisible(0);
-  }, []);
-
-  const renderContent = () => (
-    <View style={styles.sheetContainer}>
-      <View style={styles.sheetHeader}>
-        <View />
-        <Text style={styles.sheetHeaderTitle}>NOVA TAREFA</Text>
-        <Icon
-          name="close"
-          size={20}
-          color="#000"
-          onPress={() => {
-            setBottomSheetVisible(0);
-            setNewTask('');
-          }}
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={newTask}
-          onChangeText={setNewTask}
-          style={styles.input}
-          placeholder="Nova tarefa..."
-          onFocus={() => setBottomSheetVisible(550)}
-        />
-        <TouchableOpacity
-          style={styles.buttonSave}
-          onPress={() => setBottomSheetVisible(500)}>
-          <Icon
-            name="save"
-            size={20}
-            color={commonStyles.colors.secundary}
-            onPress={() => {
-              setBottomSheetVisible(0);
-              setNewTask('');
-            }}
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar
+        barStyle="light-content"
+        translucent={Platform.OS === 'android'}
+        backgroundColor={Platform.OS === 'android' && commonStyles.colors.today}
+      />
+      <AddTask
+        isVisible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onSave={onSave}
+      />
       <ImageBackground source={todayImg} style={styles.background}>
         <View style={styles.iconBar}>
           <TouchableOpacity onPress={() => toggleFilter()}>
@@ -163,24 +138,10 @@ export default function TaskList() {
       </View>
       <TouchableOpacity
         style={styles.buttonAdd}
-        onPress={() => setBottomSheetVisible(500)}>
+        onPress={() => setIsModalVisible(true)}
+        activeOpacity={0.7}>
         <Icon name="plus" size={20} color={commonStyles.colors.secundary} />
       </TouchableOpacity>
-      {bottomSheetVisible > 0 && (
-        <KeyboardAvoidingView style={styles.modal}>
-          <BottomSheet
-            ref={sheetRef}
-            snapPoints={[bottomSheetVisible, 300, 500]}
-            borderRadius={10}
-            renderContent={renderContent}
-            onCloseEnd={() => {
-              setTimeout(() => {
-                setBottomSheetVisible(0);
-              }, 1500);
-            }}
-          />
-        </KeyboardAvoidingView>
-      )}
     </View>
   );
 }
@@ -229,50 +190,7 @@ const styles = StyleSheet.create({
     bottom: 32,
     right: 24,
   },
-  modal: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheetContainer: {
-    height: 700,
-    backgroundColor: commonStyles.colors.secundary,
-    padding: 16,
-  },
-  sheetHeader: {
-    height: 50,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  sheetHeaderTitle: {
-    fontFamily: commonStyles.fontFamily,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderStyle: 'solid',
-    height: 45,
-    padding: 10,
-    borderRadius: 8,
-    fontFamily: commonStyles.fontFamily,
-    width: '83%',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonSave: {
-    backgroundColor: commonStyles.colors.today,
-    width: 45,
-    height: 45,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
 });
+function alert(arg0: string, arg1: string) {
+  throw new Error('Function not implemented.');
+}
